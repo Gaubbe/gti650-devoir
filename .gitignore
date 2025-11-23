@@ -1,0 +1,5 @@
+# LaTeX outputs
+diagrams/*.pdf
+diagrams/*.png
+diagrams/*.aux
+diagrams/*.log
