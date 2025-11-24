@@ -6,7 +6,7 @@ CONVERT_ARGS := -density 600 -units PixelsPerInch
 CONVERT_PNG_ARGS := -quality 90
 
 TEX_FILES := $(wildcard *.tex)
-TEX_FILES := $(filter-out main.tex,$(TEX_FILES))
+TEX_FILES := $(filter-out main%.tex,$(TEX_FILES))
 PDF_FILES := $(patsubst %.tex,build/%.pdf,$(TEX_FILES))
 PNG_FILES := $(patsubst %.tex,build/%.png,$(TEX_FILES))
 
@@ -18,7 +18,10 @@ build/%.png : build/%.pdf
 	$(CONVERT) $(CONVERT_ARGS) $< $(CONVERT_PNG_ARGS) $@
 
 build/%.pdf : %.tex
-	$(LATEX) $(LATEX_ARGS) -jobname=$(patsubst %.tex,%,$<) main.tex
+	$(LATEX) $(LATEX_ARGS) -jobname=$(patsubst %.tex,%,$<) main_circuit.tex
+
+build/math_%.pdf : math_%.tex
+	$(LATEX) $(LATEX_ARGS) -jobname=$(patsubst %.tex,%,$<) main_math.tex
 
 build:
 	mkdir build
