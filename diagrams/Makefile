@@ -2,7 +2,7 @@ LATEX := pdflatex
 LATEX_ARGS := -halt-on-error -interaction=nonstopmode -output-directory=build
 
 CONVERT := convert
-CONVERT_ARGS := -density 300 -units PixelsPerInch
+CONVERT_ARGS := -density 600 -units PixelsPerInch
 CONVERT_PNG_ARGS := -quality 90
 
 TEX_FILES := $(wildcard *.tex)
