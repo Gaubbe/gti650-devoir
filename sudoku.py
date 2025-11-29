@@ -109,14 +109,15 @@ if __name__ == "__main__":
     width = 0.75
 
     fig, ax = plt.subplots(layout='constrained')
+    fig.set_figwidth(12)
 
-    rects = ax.bar(x, probs[2], width)
-    ax.bar_label(rects, padding=3)
-    ax.set_ylabel('Probabilité')
+    rects = ax.bar(x, 100 * probs[2], width)
+    ax.bar_label(rects, padding=3, fmt="%.2f")
+    ax.set_ylabel('Probabilité (%)')
     ax.set_title('Probabilité de chaque état (sudoku 2x2)')
 
     x_labels = [np.binary_repr(i, width=2 * 2) for i in x]
 
     ax.set_xticks(x, x_labels)
 
-    plt.show()
+    plt.savefig('graph_2x2_probabilities.png')
