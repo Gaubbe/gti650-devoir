@@ -1,3 +1,4 @@
+from math import sqrt
 import pennylane as qml
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,10 +65,18 @@ def grover_diffusion(grid: SquareGridIndices) -> None:
         qml.PauliX(wires = i)
         qml.Hadamard(wires = i)
 
+def grover_num_iterations(grid: SquareGridIndices) -> int:
+    cos_alpha = sqrt(2**((grid.n - 1) * (grid.n - 1)) / 2**(grid.get_size()))
+    return round(
+        np.pi / (4 * cos_alpha) - 0.5
+    )
+
 if __name__ == "__main__":
-    n = 2
+    n = 3
     grid = SquareGridIndices(n)
     dev = qml.device("default.qubit", wires = grid.get_num_qubits())
+
+    print(grover_num_iterations(grid))
 
     @qml.qnode(dev)
     def run_qnode():
