@@ -1,2 +1,6 @@
 # LaTeX outputs
 diagrams/build
+
+# Python
+__pycache__
+.venv
