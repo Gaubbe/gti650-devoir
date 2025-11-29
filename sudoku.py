@@ -24,47 +24,80 @@ class SquareGridIndices:
     def cols(self) -> Iterable[Iterable[int]]:
         return map(lambda idx: self.col(idx), range(self.n))
 
+    def get_size(self) -> int:
+        return self.n * self.n
+
     def get_num_qubits(self) -> int:
-        return self.n * self.n + 2 * self.n + 1
+        return self.get_size() + 2 * self.n + 1
 
 def sudoku_line_checker_circuit(grid: SquareGridIndices) -> None:
     for row_idx, row in enumerate(grid.rows()):
         for qubit in row:
-            qml.CNOT(wires = [qubit, grid.n * grid.n + grid.n + row_idx])
+            qml.CNOT(wires = [qubit, grid.get_size() + grid.n + row_idx])
 
     for col_idx, col in enumerate(grid.cols()):
         for qubit in col:
-            qml.CNOT(wires = [qubit, grid.n * grid.n + col_idx])
+            qml.CNOT(wires = [qubit, grid.get_size() + col_idx])
 
 def sudoku_full_circuit(grid: SquareGridIndices) -> None:
     sudoku_line_checker_circuit(grid)
     qml.MultiControlledX(
-        wires = range(grid.n * grid.n, grid.get_num_qubits()),
+        wires = range(grid.get_size(), grid.get_num_qubits()),
         control_values = [True] * (2 * grid.n)
     )
     sudoku_line_checker_circuit(grid)
 
-if __name__ == "__main__":
-    n = 3
-    num_qubits = n * n + 2 * n + 1
-    dev = qml.device("default.qubit", wires = num_qubits)
-    grid = SquareGridIndices(n)
+def grover_diffusion(grid: SquareGridIndices) -> None:
+    for i in range(grid.get_size()):
+        qml.Hadamard(wires = i)
+        qml.PauliX(wires = i)
 
-    inputs = [np.binary_repr(i, width=n * n) for i in range(2**(n * n))]
+    # Controlled Z gate
+    qml.Hadamard(wires = grid.get_size() - 1)
+    qml.MultiControlledX(
+        wires = range(grid.get_size()),
+        control_values = [True] * (grid.get_size() - 1)
+    )
+    qml.Hadamard(wires = grid.get_size() - 1)
+
+    for i in range(grid.get_size()):
+        qml.PauliX(wires = i)
+        qml.Hadamard(wires = i)
+
+if __name__ == "__main__":
+    n = 2
+    grid = SquareGridIndices(n)
+    dev = qml.device("default.qubit", wires = grid.get_num_qubits())
 
     @qml.qnode(dev)
-    def run_qnode(input: str):
-        for qubit, initial_value in enumerate(reversed(input)):
-            if initial_value == "1":
-                qml.PauliX(wires = qubit)
+    def run_qnode():
+
+        for i in range(grid.get_size()):
+            qml.Hadamard(wires = i)
+
+        qml.PauliX(wires = grid.get_num_qubits() - 1)
+        qml.Hadamard(wires = grid.get_num_qubits() - 1)
 
         sudoku_full_circuit(grid)
+        grover_diffusion(grid)
+        sudoku_full_circuit(grid)
+        grover_diffusion(grid)
 
-        return qml.probs()
+        return qml.probs(wires = range(grid.get_size()))
 
-    for input in inputs:
-        probs = run_qnode(input)
-        result = np.argmax(probs)
-        if result & 0b1 == 1:
-            print(np.binary_repr(result, width = num_qubits))
+    probs = run_qnode()
+    x = np.arange(len(probs))
+    width = 0.5
 
+    fig, ax = plt.subplots(layout='constrained')
+
+    rects = ax.bar(x, probs, width)
+    ax.bar_label(rects, padding=3)
+    ax.set_ylabel('Probabilité')
+    ax.set_title(f"Probabilité de chaque état (sudoku {grid.n}x{grid.n})")
+
+    x_labels = [np.binary_repr(i, width=grid.get_size()) for i in x]
+
+    ax.set_xticks(x, x_labels)
+
+    plt.show()
