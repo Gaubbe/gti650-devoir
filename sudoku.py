@@ -24,7 +24,10 @@ class SquareGridIndices:
     def cols(self) -> Iterable[Iterable[int]]:
         return map(lambda idx: self.col(idx), range(self.n))
 
-def sudoku_checker_circuit(grid: SquareGridIndices) -> None:
+    def get_num_qubits(self) -> int:
+        return self.n * self.n + 2 * self.n + 1
+
+def sudoku_line_checker_circuit(grid: SquareGridIndices) -> None:
     for row_idx, row in enumerate(grid.rows()):
         for qubit in row:
             qml.CNOT(wires = [qubit, grid.n * grid.n + grid.n + row_idx])
@@ -33,8 +36,16 @@ def sudoku_checker_circuit(grid: SquareGridIndices) -> None:
         for qubit in col:
             qml.CNOT(wires = [qubit, grid.n * grid.n + col_idx])
 
+def sudoku_full_circuit(grid: SquareGridIndices) -> None:
+    sudoku_line_checker_circuit(grid)
+    qml.MultiControlledX(
+        wires = range(grid.n * grid.n, grid.get_num_qubits()),
+        control_values = [True] * (2 * grid.n)
+    )
+    sudoku_line_checker_circuit(grid)
+
 if __name__ == "__main__":
-    n = 2
+    n = 3
     num_qubits = n * n + 2 * n + 1
     dev = qml.device("default.qubit", wires = num_qubits)
     grid = SquareGridIndices(n)
@@ -47,12 +58,13 @@ if __name__ == "__main__":
             if initial_value == "1":
                 qml.PauliX(wires = qubit)
 
-        sudoku_checker_circuit(grid)
+        sudoku_full_circuit(grid)
 
         return qml.probs()
 
     for input in inputs:
         probs = run_qnode(input)
         result = np.argmax(probs)
-        print(np.binary_repr(result, width = num_qubits))
+        if result & 0b1 == 1:
+            print(np.binary_repr(result, width = num_qubits))
 
