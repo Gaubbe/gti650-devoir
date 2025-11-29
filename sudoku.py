@@ -1,35 +1,29 @@
 import pennylane as qml
-import pennylane.typing as qmlt
 import numpy as np
 import matplotlib.pyplot as plt
 
-dev = qml.device("default.qubit", wires = 2)
+# Typing
+import pennylane.typing as qmlt
+from typing import Iterable
 
-@qml.qnode(dev)
-def test_qnode():
-    qml.PauliX(wires = 1)
-    qml.Hadamard(wires=0)
-    qml.Hadamard(wires=1)
-    qml.CNOT(wires=range(2))
+class SquareGridIndices:
+    def __init__(self, n: int) -> None:
+        self.n = n
 
-    return qml.state()
+    def row(self, row_num: int) -> Iterable[int]:
+        assert row_num < self.n and row_num >= 0, "row_num must be a positive number lower than n"
+        return range(row_num * self.n, (row_num + 1) * self.n)
+
+    def col(self, col_num: int) -> Iterable[int]:
+        assert col_num < self.n and col_num >= 0, "col_num must be a positive number lower than n"
+        return range(col_num, self.n * self.n, self.n)
 
 if __name__ == "__main__":
-    state = test_qnode()
-    state_data = {
-        "Real": np.real(state),
-        "Imaginary": np.imag(state)
-    }
-    bin_repr = [np.binary_repr(i, width=2) for i in range(2**2)]
-    x = np.arange(len(bin_repr))
+    grid = SquareGridIndices(3)
 
-    width = 0.375
-    fig, ax = plt.subplots()
-    for i, (label, data) in enumerate(state_data.items()):
-        offset = width * i
-        ax.bar(x + offset, data, width, label=label)
+    for i in range(grid.n):
+        row_idx = list(grid.row(i))
+        print(f"row_idx[{i}] = {row_idx}")
 
-    ax.set_xticks(x + width / 2, bin_repr)
-    ax.legend(loc='upper left', ncols=2)
-
-    plt.show()
+        col_idx = list(grid.col(i))
+        print(f"col_idx[{i}] = {col_idx}")
