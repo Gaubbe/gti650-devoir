@@ -105,6 +105,15 @@ if __name__ == "__main__":
 
         probs[size] = results
 
+    # Calculate succes probability for 2x2
+    sorted = np.sort(probs[2])
+    print(f"Probability of success (2x2): {np.sum(sorted[-2:]) * 100}%")
+
+    # Calculate succes probability for 3x3
+    sorted = np.sort(probs[3])
+    print(f"Probability of success (3x3): {np.sum(sorted[-16:]) * 100}%")
+
+    # Draw bar graph for 2x2
     x = np.arange(len(probs[2]))
     width = 0.75
 
