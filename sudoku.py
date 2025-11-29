@@ -112,7 +112,7 @@ if __name__ == "__main__":
     fig.set_figwidth(12)
 
     rects = ax.bar(x, 100 * probs[2], width)
-    ax.bar_label(rects, padding=3, fmt="%.2f")
+    ax.bar_label(rects, padding=3, fmt="%.2f %%")
     ax.set_ylabel('Probabilité (%)')
     ax.set_title('Probabilité de chaque état (sudoku 2x2)')
 
