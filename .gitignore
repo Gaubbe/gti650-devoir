@@ -4,3 +4,6 @@ diagrams/build
 # Python
 __pycache__
 .venv
+
+# Python outputs
+graph_2x2_probabilities.png
