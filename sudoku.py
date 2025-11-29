@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Typing
-import pennylane.typing as qmlt
+import numpy.typing as npt
 from typing import Iterable
 
 class SquareGridIndices:
@@ -72,40 +72,50 @@ def grover_num_iterations(grid: SquareGridIndices) -> int:
     )
 
 if __name__ == "__main__":
-    n = 3
-    grid = SquareGridIndices(n)
-    dev = qml.device("default.qubit", wires = grid.get_num_qubits())
+    import pennylane.transforms as qmlt
 
-    print(grover_num_iterations(grid))
-
-    @qml.qnode(dev)
-    def run_qnode():
-
+    def run_qnode(grid: SquareGridIndices):
         for i in range(grid.get_size()):
             qml.Hadamard(wires = i)
 
         qml.PauliX(wires = grid.get_num_qubits() - 1)
         qml.Hadamard(wires = grid.get_num_qubits() - 1)
 
-        sudoku_full_circuit(grid)
-        grover_diffusion(grid)
-        sudoku_full_circuit(grid)
-        grover_diffusion(grid)
+        for _ in range(grover_num_iterations(grid)):
+            sudoku_full_circuit(grid)
+            grover_diffusion(grid)
 
         return qml.probs(wires = range(grid.get_size()))
 
-    probs = run_qnode()
-    x = np.arange(len(probs))
-    width = 0.5
+    sizes = [2, 3]
+    probs: dict[int, npt.NDArray] = {}
+    for size in sizes:
+        grid = SquareGridIndices(size)
+        dev = qml.device("default.qubit", wires=grid.get_num_qubits())
+
+        node = qml.QNode(run_qnode, dev)
+        print(f"Running {size}x{size} circuit...")
+        results = node(grid)
+        print(f"Finished!")
+
+        print("Getting specs...")
+        decomposed = qmlt.decompose(qml.QNode(run_qnode, dev), gate_set=lambda op: len(op.wires)<=2)
+        specs = qml.specs(decomposed)(grid)
+        print("\n".join([f"{k}: {v}" for k, v in specs["resources"].gate_types.items()]))
+
+        probs[size] = results
+
+    x = np.arange(len(probs[2]))
+    width = 0.75
 
     fig, ax = plt.subplots(layout='constrained')
 
-    rects = ax.bar(x, probs, width)
+    rects = ax.bar(x, probs[2], width)
     ax.bar_label(rects, padding=3)
     ax.set_ylabel('Probabilité')
-    ax.set_title(f"Probabilité de chaque état (sudoku {grid.n}x{grid.n})")
+    ax.set_title('Probabilité de chaque état (sudoku 2x2)')
 
-    x_labels = [np.binary_repr(i, width=grid.get_size()) for i in x]
+    x_labels = [np.binary_repr(i, width=2 * 2) for i in x]
 
     ax.set_xticks(x, x_labels)
 
