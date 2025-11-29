@@ -18,12 +18,41 @@ class SquareGridIndices:
         assert col_num < self.n and col_num >= 0, "col_num must be a positive number lower than n"
         return range(col_num, self.n * self.n, self.n)
 
+    def rows(self) -> Iterable[Iterable[int]]:
+        return map(lambda idx: self.row(idx), range(self.n))
+
+    def cols(self) -> Iterable[Iterable[int]]:
+        return map(lambda idx: self.col(idx), range(self.n))
+
+def sudoku_checker_circuit(grid: SquareGridIndices) -> None:
+    for row_idx, row in enumerate(grid.rows()):
+        for qubit in row:
+            qml.CNOT(wires = [qubit, grid.n * grid.n + grid.n + row_idx])
+
+    for col_idx, col in enumerate(grid.cols()):
+        for qubit in col:
+            qml.CNOT(wires = [qubit, grid.n * grid.n + col_idx])
+
 if __name__ == "__main__":
-    grid = SquareGridIndices(3)
+    n = 2
+    num_qubits = n * n + 2 * n + 1
+    dev = qml.device("default.qubit", wires = num_qubits)
+    grid = SquareGridIndices(n)
 
-    for i in range(grid.n):
-        row_idx = list(grid.row(i))
-        print(f"row_idx[{i}] = {row_idx}")
+    inputs = [np.binary_repr(i, width=n * n) for i in range(2**(n * n))]
 
-        col_idx = list(grid.col(i))
-        print(f"col_idx[{i}] = {col_idx}")
+    @qml.qnode(dev)
+    def run_qnode(input: str):
+        for qubit, initial_value in enumerate(reversed(input)):
+            if initial_value == "1":
+                qml.PauliX(wires = qubit)
+
+        sudoku_checker_circuit(grid)
+
+        return qml.probs()
+
+    for input in inputs:
+        probs = run_qnode(input)
+        result = np.argmax(probs)
+        print(np.binary_repr(result, width = num_qubits))
+
